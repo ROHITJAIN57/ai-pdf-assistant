@@ -14,6 +14,10 @@ pypdf
 # Google AI
 google-generativeai
 
+#OCR
+pytesseract>=0.3.10
+pdf2image>=1.16.0
+
 # Core libraries
 numpy>=2.1.0,<3.0.0
 pandas>=2.1.0,<3.0.0
@@ -25,4 +29,5 @@ packaging>=23.0,<24.0
 importlib-metadata>=6.0,<7.0
 cachetools>=5.0,<6.0
 rich>=14.2.0
+
 
