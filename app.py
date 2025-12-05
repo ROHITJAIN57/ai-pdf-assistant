@@ -7,7 +7,7 @@ import os
 import uuid
 from pdf2image import convert_from_bytes
 import pytesseract
-from langchain.docstore.document import Document
+from langchain_community.docstore.document import Document
 
 # ------------------------------------------
 # CONFIG
@@ -221,3 +221,4 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
 
     st.session_state.messages.append({"role": "assistant", "content": answer})
     st.rerun()
+
