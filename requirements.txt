@@ -11,6 +11,10 @@ torch==2.9.1
 faiss-cpu==1.13.1
 pypdf
 
+# PDF handling
+pdf2image
+pytesseract
+
 # Google AI
 google-generativeai
 
@@ -25,3 +29,4 @@ packaging>=23.0,<24.0
 importlib-metadata>=6.0,<7.0
 cachetools>=5.0,<6.0
 rich>=14.2.0
+
