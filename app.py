@@ -92,19 +92,22 @@ elif os.path.exists(os.path.join(VECTORSTORE_DIR, "index.faiss")) and st.session
     )
 
 # ------------------------------------------
-# CHAT DISPLAY – MOBILE & DARK MODE FRIENDLY
+# CHAT DISPLAY – USER LEFT, ASSISTANT RIGHT
 # ------------------------------------------
 st.markdown(
     """
     <style>
-    /* Container for chat */
     .chat-container {
         display: flex;
         flex-direction: column;
-        gap: 8px;
+        gap: 12px;
     }
 
-    /* Chat bubbles */
+    .chat-row {
+        display: flex;
+        width: 100%;
+    }
+
     .chat-bubble {
         padding: 12px;
         border-radius: 10px;
@@ -113,37 +116,44 @@ st.markdown(
         font-size: 16px;
     }
 
-    /* User messages */
+    /* User on left */
     .user {
         background-color: #DCF8C6;
         color: black;
-        align-self: flex-end;
+        margin-right: auto;
     }
 
-    /* Assistant messages */
+    /* Assistant on right */
     .assistant {
         background-color: #E6E6FA;
         color: black;
-        align-self: flex-start;
+        margin-left: auto;
     }
 
-    /* Adaptive for dark mode */
+    /* Dark mode */
     @media (prefers-color-scheme: dark) {
         .user {
-            background-color: #2e7d32; /* dark green */
+            background-color: #2e7d32;
             color: #EEE;
         }
         .assistant {
-            background-color: #444; /* dark gray */
+            background-color: #444;
             color: #EEE;
         }
     }
 
-    /* Make bubbles responsive on mobile */
+    /* Mobile adjustments */
     @media (max-width: 600px) {
         .chat-bubble {
             max-width: 90%;
             font-size: 14px;
+        }
+        .chat-row {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+        .assistant {
+            align-self: flex-start;
         }
     }
     </style>
@@ -151,7 +161,7 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-# Container for chat messages
+# Chat container
 chat_container = st.container()
 with chat_container:
     st.markdown("<div class='chat-container'>", unsafe_allow_html=True)
@@ -161,13 +171,14 @@ with chat_container:
 
         st.markdown(
             f"""
-            <div class='chat-bubble {"user" if role=="user" else "assistant"}'>
-                {content}
+            <div class='chat-row'>
+                <div class='chat-bubble {role}'>{content}</div>
             </div>
             """,
             unsafe_allow_html=True
         )
     st.markdown("</div>", unsafe_allow_html=True)
+
 
 
 # ------------------------------------------
@@ -213,5 +224,6 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
     # Add assistant message
     st.session_state.messages.append({"role": "assistant", "content": answer})
     st.rerun()
+
 
 
