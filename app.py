@@ -9,7 +9,9 @@ import uuid
 # ------------------------------------------
 # CONFIG
 # ------------------------------------------
-genai.configure(api_key="AIzaSyDeDGPceej_95zbNO4u6qu9dfe7H2eNRL4")
+api_key = st.secrets["google"]["api_key"]
+genai.configure(api_key=api_key)
+
 model = genai.GenerativeModel("models/gemini-2.5-pro")
 
 st.set_page_config(page_title="AI PDF Assistant", layout="wide")
@@ -154,3 +156,4 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
     # Add assistant message
     st.session_state.messages.append({"role": "assistant", "content": answer})
     st.rerun()
+
