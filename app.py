@@ -5,13 +5,15 @@ from langchain_community.embeddings.huggingface import HuggingFaceEmbeddings
 import google.generativeai as genai
 import os
 import uuid
+from pdf2image import convert_from_bytes
+import pytesseract
+from langchain.docstore.document import Document
 
 # ------------------------------------------
 # CONFIG
 # ------------------------------------------
-api_key = st.secrets["google"]["api_key"]
+api_key = st.secrets["google"]["api_key"]  # Safe API key
 genai.configure(api_key=api_key)
-
 model = genai.GenerativeModel("models/gemini-2.5-pro")
 
 st.set_page_config(page_title="AI PDF Assistant", layout="wide")
@@ -45,7 +47,6 @@ EMB_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
 # SIDEBAR – MOBILE-FRIENDLY PDF UPLOAD
 # ------------------------------------------
 st.sidebar.header("📁 Upload PDFs")
-
 st.sidebar.markdown("📌 **Tip:** On mobile, tap 'Choose Files' to select PDFs from your device.")
 
 uploaded_files = st.sidebar.file_uploader(
@@ -56,7 +57,6 @@ if uploaded_files:
     # Clear previous session data to avoid old PDFs persisting
     st.session_state.db = None
     st.session_state.pdf_ids = set()
-
     emb = HuggingFaceEmbeddings(model_name=EMB_MODEL)
 
     for pdf in uploaded_files:
@@ -68,8 +68,18 @@ if uploaded_files:
         with open(temp_path, "wb") as f:
             f.write(pdf.getbuffer())
 
+        # Load PDF
         loader = PyPDFLoader(temp_path)
         docs = loader.load()
+
+        # If PDF has no extractable text, use OCR for scanned/handwritten pages
+        if not docs:
+            pages = convert_from_bytes(open(temp_path, "rb").read())
+            docs = []
+            for page in pages:
+                text = pytesseract.image_to_string(page, lang='eng', config='--oem 1 --psm 6')
+                if text.strip():
+                    docs.append(Document(page_content=text))
 
         # Create or add to FAISS index
         if st.session_state.db is None:
@@ -92,74 +102,71 @@ elif os.path.exists(os.path.join(VECTORSTORE_DIR, "index.faiss")) and st.session
     )
 
 # ------------------------------------------
-# CHAT DISPLAY – USER LEFT, ASSISTANT RIGHT
+# CHAT DISPLAY – USER RIGHT, ASSISTANT LEFT
 # ------------------------------------------
-st.markdown(
-    """
-    <style>
-    .chat-container {
-        display: flex;
-        flex-direction: column;
-        gap: 12px;
-    }
+st.markdown("""
+<style>
+.chat-container {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
 
-    .chat-row {
-        display: flex;
-        width: 100%;
-    }
+.chat-row {
+    display: flex;
+    width: 100%;
+}
 
-    .chat-bubble {
-        padding: 12px;
-        border-radius: 10px;
-        max-width: 70%;
-        word-wrap: break-word;
-        font-size: 16px;
-    }
+.chat-bubble {
+    padding: 12px;
+    border-radius: 10px;
+    max-width: 70%;
+    word-wrap: break-word;
+    font-size: 16px;
+}
 
-    /* User on left */
+/* User on right */
+.user {
+    background-color: #DCF8C6;
+    color: black;
+    margin-left: auto;
+}
+
+/* Assistant on left */
+.assistant {
+    background-color: #E6E6FA;
+    color: black;
+    margin-right: auto;
+}
+
+/* Dark mode */
+@media (prefers-color-scheme: dark) {
     .user {
-        background-color: #DCF8C6;
-        color: black;
-        margin-left: auto;
+        background-color: #2e7d32;
+        color: #EEE;
     }
-
-    /* Assistant on right */
     .assistant {
-        background-color: #E6E6FA;
-        color: black;
-        margin-right: auto;
+        background-color: #444;
+        color: #EEE;
     }
+}
 
-    /* Dark mode */
-    @media (prefers-color-scheme: dark) {
-        .user {
-            background-color: #2e7d32;
-            color: #EEE;
-        }
-        .assistant {
-            background-color: #444;
-            color: #EEE;
-        }
+/* Mobile adjustments */
+@media (max-width: 600px) {
+    .chat-bubble {
+        max-width: 90%;
+        font-size: 14px;
     }
-
-    /* Mobile adjustments */
-    @media (max-width: 600px) {
-        .chat-bubble {
-            max-width: 90%;
-            font-size: 14px;
-        }
-        .chat-row {
-            flex-direction: column;
-            align-items: flex-start;
-        }
-        .assistant {
-            align-self: flex-start;
-        }
+    .chat-row {
+        flex-direction: column;
+        align-items: flex-start;
     }
-    </style>
-    """,
-    unsafe_allow_html=True
-)
+    .assistant {
+        align-self: flex-start;
+    }
+}
+</style>
+""", unsafe_allow_html=True)
 
 # Chat container
 chat_container = st.container()
@@ -168,18 +175,11 @@ with chat_container:
     for msg in st.session_state.messages:
         role = msg["role"]
         content = msg["content"]
-
         st.markdown(
-            f"""
-            <div class='chat-row'>
-                <div class='chat-bubble {role}'>{content}</div>
-            </div>
-            """,
+            f"<div class='chat-row'><div class='chat-bubble {role}'>{content}</div></div>",
             unsafe_allow_html=True
         )
     st.markdown("</div>", unsafe_allow_html=True)
-
-
 
 # ------------------------------------------
 # CHAT INPUT
@@ -201,12 +201,10 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
     last_query = st.session_state.messages[-1]["content"]
 
     with st.spinner("Processing your question... ⏳"):
-        # Optimized retrieval
         retriever = st.session_state.db.as_retriever(search_kwargs={"k": 5})
         docs = retriever.invoke(last_query)
         context = "\n".join([d.page_content for d in docs])
 
-        # Prompt formatting with clear instruction
         prompt = f"""
         Use ONLY the context below to answer the question accurately.
         
@@ -221,10 +219,5 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
         response = model.generate_content(prompt)
         answer = response.text.strip()
 
-    # Add assistant message
     st.session_state.messages.append({"role": "assistant", "content": answer})
     st.rerun()
-
-
-
-
