@@ -1,19 +1,30 @@
-# Streamlit (latest compatible with Python 3.13)
-streamlit==1.30.0  
+# Core UI
+streamlit>=1.31.0,<2.0.0   # Compatible with numpy>=2.1.0
 
-# Langchain community
+# Langchain and related
 langchain-community==0.4.1
+langsmith>=0.4.55,<1.0.0
 
-# Sentence Transformers & PyTorch
+# NLP embeddings
 sentence-transformers>=2.2.2
+
+# Torch for ML backend
 torch==2.9.1
 
-# FAISS
+# FAISS for vector search
 faiss-cpu==1.13.1
 
 # Google Generative AI
 google-generativeai
 
-# Pillow and numpy (Python 3.13 wheels)
-Pillow>=10.0.0
-numpy>=1.26.0
+# Extras for Streamlit
+rich>=14.2.0
+pandas>=2.1.0,<3.0.0
+numpy>=2.1.0,<3.0.0
+pillow>=9.5.0,<10.0.0
+altair>=5.5.0,<6.0.0
+click>=8.0,<9.0
+blinker>=1.5,<2.0
+packaging>=23.0,<24.0
+importlib-metadata>=6.0,<7.0
+cachetools>=5.0,<6.0
