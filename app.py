@@ -120,14 +120,14 @@ st.markdown(
     .user {
         background-color: #DCF8C6;
         color: black;
-        margin-right: auto;
+        margin-left: auto;
     }
 
     /* Assistant on right */
     .assistant {
         background-color: #E6E6FA;
         color: black;
-        margin-left: auto;
+        margin-right: auto;
     }
 
     /* Dark mode */
@@ -224,6 +224,7 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
     # Add assistant message
     st.session_state.messages.append({"role": "assistant", "content": answer})
     st.rerun()
+
 
 
 
