@@ -92,26 +92,83 @@ elif os.path.exists(os.path.join(VECTORSTORE_DIR, "index.faiss")) and st.session
     )
 
 # ------------------------------------------
-# CHAT DISPLAY
+# CHAT DISPLAY – MOBILE & DARK MODE FRIENDLY
 # ------------------------------------------
+st.markdown(
+    """
+    <style>
+    /* Container for chat */
+    .chat-container {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    /* Chat bubbles */
+    .chat-bubble {
+        padding: 12px;
+        border-radius: 10px;
+        max-width: 70%;
+        word-wrap: break-word;
+        font-size: 16px;
+    }
+
+    /* User messages */
+    .user {
+        background-color: #DCF8C6;
+        color: black;
+        align-self: flex-end;
+    }
+
+    /* Assistant messages */
+    .assistant {
+        background-color: #E6E6FA;
+        color: black;
+        align-self: flex-start;
+    }
+
+    /* Adaptive for dark mode */
+    @media (prefers-color-scheme: dark) {
+        .user {
+            background-color: #2e7d32; /* dark green */
+            color: #EEE;
+        }
+        .assistant {
+            background-color: #444; /* dark gray */
+            color: #EEE;
+        }
+    }
+
+    /* Make bubbles responsive on mobile */
+    @media (max-width: 600px) {
+        .chat-bubble {
+            max-width: 90%;
+            font-size: 14px;
+        }
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
+
+# Container for chat messages
 chat_container = st.container()
 with chat_container:
+    st.markdown("<div class='chat-container'>", unsafe_allow_html=True)
     for msg in st.session_state.messages:
         role = msg["role"]
         content = msg["content"]
-        color = "#DCF8C6" if role == "user" else "#E6E6FA"
-        align = "flex-end" if role == "user" else "flex-start"
 
         st.markdown(
             f"""
-            <div style='display:flex; justify-content:{align}; margin:8px 0;'>
-                <div style='background:{color}; padding:12px; border-radius:10px; max-width:70%; word-wrap: break-word;'>
-                    {content}
-                </div>
+            <div class='chat-bubble {"user" if role=="user" else "assistant"}'>
+                {content}
             </div>
             """,
             unsafe_allow_html=True
         )
+    st.markdown("</div>", unsafe_allow_html=True)
+
 
 # ------------------------------------------
 # CHAT INPUT
@@ -156,4 +213,5 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
     # Add assistant message
     st.session_state.messages.append({"role": "assistant", "content": answer})
     st.rerun()
+
 
