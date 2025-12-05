@@ -40,14 +40,21 @@ os.makedirs(VECTORSTORE_DIR, exist_ok=True)
 EMB_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
 
 # ------------------------------------------
-# SIDEBAR – MULTI PDF UPLOAD
+# SIDEBAR – MOBILE-FRIENDLY PDF UPLOAD
 # ------------------------------------------
 st.sidebar.header("📁 Upload PDFs")
+
+st.sidebar.markdown("📌 **Tip:** On mobile, tap 'Choose Files' to select PDFs from your device.")
+
 uploaded_files = st.sidebar.file_uploader(
-    "Upload PDFs", type=["pdf"], accept_multiple_files=True
+    "Upload PDFs", type=["pdf"], accept_multiple_files=True, key="pdf_uploader", label_visibility="visible"
 )
 
 if uploaded_files:
+    # Clear previous session data to avoid old PDFs persisting
+    st.session_state.db = None
+    st.session_state.pdf_ids = set()
+
     emb = HuggingFaceEmbeddings(model_name=EMB_MODEL)
 
     for pdf in uploaded_files:
@@ -68,15 +75,14 @@ if uploaded_files:
         else:
             st.session_state.db.add_documents(docs)
 
-        # Save persistent index
-        st.session_state.db.save_local(VECTORSTORE_DIR)
         st.session_state.pdf_ids.add(pdf_id)
-
         os.remove(temp_path)
 
-    st.sidebar.success("PDFs indexed successfully!")
+    # Save persistent index
+    st.session_state.db.save_local(VECTORSTORE_DIR)
+    st.sidebar.success("✅ PDFs indexed successfully!")
 
-# Load FAISS index if exists
+# Load FAISS index if exists and session DB is empty
 elif os.path.exists(os.path.join(VECTORSTORE_DIR, "index.faiss")) and st.session_state.db is None:
     emb = HuggingFaceEmbeddings(model_name=EMB_MODEL)
     st.session_state.db = FAISS.load_local(
